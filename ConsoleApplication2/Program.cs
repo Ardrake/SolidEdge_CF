@@ -2,7 +2,7 @@
 using  System.Reflection;
 using  System.Runtime.InteropServices;
 
-namespace MyMacro
+namespace SE_interface
 {
     class Program
     {
