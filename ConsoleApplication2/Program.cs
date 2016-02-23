@@ -1,8 +1,9 @@
-﻿using  System;
-using  System.Reflection;
+﻿using System;
+using System.Reflection;
 using System.Collections.Generic;
-using  System.Runtime.InteropServices;
+using System.Runtime.InteropServices;
 using SolidEdgeDraft;
+using System.IO;
 
 namespace SE_interface
 {
@@ -44,9 +45,10 @@ namespace SE_interface
                 StartSE();
             }
 
-
+            //OuvrirAsm();
+            IterateFolder();
             // faire la magie icitte
-            CreateDraft();
+            //CreateDraft();
             //CreateDoc();
 
         }
@@ -90,6 +92,83 @@ namespace SE_interface
             part = (SolidEdgePart.PartDocument)documents.Add("SolidEdge.PartDocument", Missing.Value);
             CleanSE();
         }
+
+        static void OuvrirAsm(string fname)
+        {
+            //string fName = @"K:\PROJET_IMAGE_WEB\PORTE_2016\P-04A\32X73\P04.asm";
+            Console.WriteLine("Creation de document test");
+            documents = application.Documents;
+            assembly = (SolidEdgeAssembly.AssemblyDocument)documents.Open(fname);
+
+            SolidEdgeFramework.Window window = (SolidEdgeFramework.Window)application.ActiveWindow;
+            window.View.Fit();
+            SaveAsImage(window, Path.GetDirectoryName(fname));
+            assembly.Save();
+            assembly.Close();
+            documents.Close();
+            Marshal.FinalReleaseComObject(documents);
+            documents = null;
+            application.DoIdle();
+
+        }
+
+        static void IterateFolder()
+        {
+            string folder = @"K:\PROJET_IMAGE_WEB\PORTE_2016\";
+            IEnumerable<string> fnames = Directory.EnumerateFiles(folder, "*.*", SearchOption.AllDirectories);
+            
+            foreach (string items in fnames )
+            {
+                if (Path.GetExtension(items) == ".asm" && Path.GetFileName(items).Trim().StartsWith("P"))
+                {
+                    Console.WriteLine(items);
+                    OuvrirAsm(items);
+                }
+                
+            }
+            Console.ReadKey();
+        }
+
+    static void SaveAsImage(SolidEdgeFramework.Window window, string folder)
+        {
+            //string[] extensions = { ".jpg", ".bmp", ".tif" };
+            string[] extensions = { ".jpg" };
+            SolidEdgeFramework.View view = null;
+            Guid guid = Guid.NewGuid();
+            //string folder = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+            //string folder = @"K:\PROJET_IMAGE_WEB\PORTE_2016\P-04A\32X73\";
+
+            double resolution = 1;  // DPI - Larger values have better quality but also lead to larger file. 
+            int colorDepth = 24;
+            //int width = window.UsableWidth;
+            //int height = window.UsableHeight;
+            int width = 13201;
+            int height = 6494;
+            // Get a reference to the 3D view. 
+            view = window.View;
+
+            // Save each extension. 
+            foreach (string extension in extensions)
+            {
+                // File saved to desktop. 
+                string filename = Path.ChangeExtension(guid.ToString(), extension);
+                filename = Path.Combine(folder, filename);
+
+                // You can specify .bmp (Windows Bitmap), .tif (TIFF), or .jpg (JPEG). 
+                view.SaveAsImage(
+                    Filename: filename,
+                    Width: width,
+                    Height: height,
+                    AltViewStyle: null,
+                    Resolution: resolution,
+                    ColorDepth: colorDepth,
+                    ImageQuality: SolidEdgeFramework.SeImageQualityType.seImageQualityHigh,
+                    Invert: false);
+
+                Console.WriteLine("Saved '{0}'.", filename);
+            }
+        }
+
 
         static void CreateDraft()
         {
